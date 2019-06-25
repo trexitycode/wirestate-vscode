@@ -4,7 +4,7 @@ This extension provides syntax highlighting for the WireState markup language.
 
 ## Features
 
-\!\[Syntax Highlighting\]\(images/example1.png\)
+![Syntax Highlighting](images/example1.png)
 
 ## Known Issues
 

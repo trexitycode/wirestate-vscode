@@ -1,0 +1,114 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "WireState",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#states"
+		},
+    {
+			"include": "#transitions"
+    },
+    {
+      "include": "#machines"
+    },
+    {
+      "include": "#uses"
+    },
+    {
+      "include": "#uses-as"
+    }
+	],
+	"repository": {
+    "comments": {
+      "match": "(^[ \\t]+)?(#.*)\\n",
+      "captures": {
+        "1": {
+          "name": "punctuation.whitespace.indent.comments.wirestate"
+        },
+        "2": {
+          "name": "comment.line.number-sign.comments.wirestate"
+        }
+      }
+    },
+    "states": {
+      "match": "(^[ \\t]+)([A-Za-z0-9 _-]+)([\\*!]+)?\\n",
+      "captures": {
+        "1": {
+          "name": "punctuation.whitespace.indent.states.wirestate"
+        },
+        "2": {
+          "name": "support.constant.state.states.wirestate"
+        },
+        "3": {
+          "name": "entity.name.tag.qualifier.states.wirestate"
+        }
+      }
+    },
+    "transitions": {
+      "match": "(^[ \\t]+)([A-Za-z0-9 _-]+) (->) ([A-Za-z0-9 _-]+)\\n",
+      "captures": {
+        "1": {
+          "name": "punctuation.whitespace.indent.transition.wirestate"
+        },
+        "2": {
+          "name": "string.unquoted.event.transition.wirestate"
+        },
+        "3": {
+          "name": "keyword.operator.arrow.transition.wirestate"
+        },
+        "4": {
+          "name": "support.constant.target.transition.wirestate"
+        }
+      }
+    },
+    "machines": {
+      "match": "(@machine) ([A-Za-z0-9 _-]+)\\n",
+      "captures": {
+        "1": {
+          "name": "entity.name.type.machine.machines.wirestate"
+        },
+        "2": {
+          "name": "variable.parameter.name.machines.wirestate"
+        }
+      }
+    },
+    "uses": {
+      "match": "(^[ \\t]+)(@use) (\"?[A-Za-z0-9 _-]+\"?)\\n",
+      "captures": {
+        "1": {
+          "name": "punctuation.whitespace.indent.uses.wirestate"
+        },
+        "2": {
+          "name": "entity.name.function.machine.uses.wirestate"
+        },
+        "3": {
+          "name": "variable.parameter.name.uses.wirestate"
+        }
+      }
+    },
+    "uses-as": {
+      "match": "(^[ \\t]+)(@use) (\"?[A-Za-z0-9 _-]+\"?) (as) (\"?[A-Za-z0-9 _-]+\"?)\\n",
+      "captures": {
+        "1": {
+          "name": "punctuation.whitespace.indent.uses-as.wirestate"
+        },
+        "2": {
+          "name": "entity.name.function.machine.uses-as.wirestate"
+        },
+        "3": {
+          "name": "variable.parameter.name.uses-as.wirestate"
+        },
+        "4": {
+          "name": "keyword.operator.as.uses-as.wirestate"
+        },
+        "5": {
+          "name": "variable.parameter.alias.uses-as.wirestate"
+        }
+      }
+    }
+  },
+	"scopeName": "source.wirestate"
+}

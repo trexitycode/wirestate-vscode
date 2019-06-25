@@ -1,0 +1,25 @@
+{
+    "name": "@launchfort/wirestate-vscode",
+    "displayName": "WireState VSCode",
+    "description": "WireState Syntax Highlighting",
+    "version": "1.0.0",
+    "engines": {
+        "vscode": "^1.35.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "wirestate",
+            "aliases": ["WireState", "wirestate"],
+            "extensions": [".wirestate"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "wirestate",
+            "scopeName": "source.wirestate",
+            "path": "./syntaxes/wirestate.tmLanguage.json"
+        }]
+    }
+}

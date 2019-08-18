@@ -133,6 +133,11 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
 
     let newEditor = null
 
+    // Unfortunately it doesn't seem possible to open an "untitled" file with
+    // *both* a specific filename AND initial contents. So, we create an
+    // "untitled" file with specific filename, then use editor commands to
+    // insert the initial content. Additionally, we then move the cursor to a
+    // desired initial location.
     vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:${callbackFile}`, true))
       .then(doc => {
         return vscode.window.showTextDocument(doc)
@@ -196,9 +201,11 @@ function rebuildIndexFile (filename, mode = 'add') {
 
   const stateId = path.basename(pathParts.pop(), '.js')
   const machineName = pathParts.pop()
+
   const key = stateId === MACHINE_ONLY_STATE_NAME
     ? `${machineName}`
     : `${machineName}/${stateId}`
+
   const requirePath = stateId === MACHINE_ONLY_STATE_NAME
     ? `./${machineName}`
     : `./${machineName}/${stateId}`

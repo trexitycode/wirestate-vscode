@@ -1,25 +1,77 @@
 {
-    "name": "@launchfort/wirestate-vscode",
-    "displayName": "WireState VSCode",
-    "description": "WireState Syntax Highlighting",
-    "version": "1.0.0",
-    "engines": {
-        "vscode": "^1.35.0"
-    },
-    "categories": [
-        "Programming Languages"
+  "name": "wirestate-vscode",
+  "displayName": "WireState VSCode",
+  "description": "WireState syntax highlighting and commands",
+  "version": "1.0.0",
+  "publisher": "launchfort",
+  "engines": {
+    "vscode": "^1.37.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:wirestate",
+    "workspaceContains:.wirestate"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "wirestate",
+        "aliases": ["WireState", "wirestate"],
+        "extensions": [".wirestate"],
+        "configuration": "./language-configuration.json"
+      }
     ],
-    "contributes": {
-        "languages": [{
-            "id": "wirestate",
-            "aliases": ["WireState", "wirestate"],
-            "extensions": [".wirestate"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "wirestate",
-            "scopeName": "source.wirestate",
-            "path": "./syntaxes/wirestate.tmLanguage.json"
-        }]
-    }
+    "grammars": [
+      {
+        "language": "wirestate",
+        "scopeName": "source.wirestate",
+        "path": "./syntaxes/wirestate.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "extension.manageCallback",
+        "title": "Manage WireState Callback..."
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorLangId == wirestate",
+          "command": "extension.manageCallback",
+          "group": "z_commands"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "extension.manageCallback",
+        "key": "alt+ctrl+/",
+        "mac": "alt+cmd+/",
+        "when": "editorLangId == wirestate && editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "recast": "^0.18.2"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^10.12.21",
+    "@types/vscode": "^1.37.0",
+    "eslint": "^5.13.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.1.4",
+    "typescript": "^3.3.1",
+    "vscode-test": "^1.0.2"
+  }
 }

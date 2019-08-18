@@ -34,7 +34,7 @@
       }
     },
     "states": {
-      "match": "(^[ \\t]+)([A-Za-z0-9 _-]+)([\\*!]+)?\\n",
+      "match": "(^[ \\t]+)([A-Za-z0-9 _-]+)([\\*!&]+)?\\n",
       "captures": {
         "1": {
           "name": "punctuation.whitespace.indent.states.wirestate"

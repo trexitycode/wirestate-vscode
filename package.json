@@ -2,7 +2,7 @@
   "name": "wirestate-vscode",
   "displayName": "WireState VSCode",
   "description": "WireState syntax highlighting and commands",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "publisher": "launchfort",
   "engines": {
     "vscode": "^1.37.0"

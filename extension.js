@@ -75,11 +75,15 @@ function activate (context) {
   })
 
   context.subscriptions.push(disposable)
-    
+
+  // Watch for callback files being saved, so as to auto-update the index file
+  // with the appropriate require statement
   disposables.push(vscode.workspace.onDidSaveTextDocument(document => {
     rebuildIndexFile(document.fileName, 'add')
   }))
 
+  // Watch for callback files being deleted, so as to auto-update the index file
+  // by removing the appropriate require statement
   const documentUri = vscode.window.activeTextEditor.document.uri
   const workspaceFolder = (
     vscode.workspace.getWorkspaceFolder(documentUri) ||

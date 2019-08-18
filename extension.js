@@ -3,7 +3,9 @@ const fs = require('fs')
 const path = require('path')
 const recast = require('recast')
 
+const MACHINE_ONLY_STATE_NAME = 'index'
 const CALLBACKS_DIRECTORY_NAME = 'callbacks'
+const CALLBACK_FILENAME_EXTENSION = '.js'
 const CALLBACKS_INDEX_FILENAME = 'index.js'
 const CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS = `../${CALLBACKS_DIRECTORY_NAME}`
 const DEFAULT_CALLBACK_CONTENTS_CURSOR_POSITION = [1, 2]
@@ -19,6 +21,9 @@ let disposables = []
 function activate (context) {
   console.log('[wirestate] extension activated')
 
+  // Set the wordPattern to the best approximation we can achieve to consider
+  // whole state names/event names etc as single words. This makes extracting
+  // what the user intends to target as a "callback" much easier.
   // Must register wordPattern via setLanguageConfiguration due to the following issue:
   // https://github.com/Microsoft/vscode/issues/42649
   vscode.languages.setLanguageConfiguration('wirestate', {
@@ -78,7 +83,9 @@ function activate (context) {
   const documentUri = vscode.window.activeTextEditor.document.uri
   const workspaceFolder = (
     vscode.workspace.getWorkspaceFolder(documentUri) ||
-    vscode.Uri.file(path.resolve(path.dirname(documentUri.fsPath), '..')).fsPath // fallback assumes structure of statecharts/[documentUri here], where callbacks is a sibling to statecharts
+    // In case you are not using a Workspace, the fallback assumes structure of
+    // statecharts/[documentUri here], where callbacks is a sibling to statecharts
+    vscode.Uri.file(path.resolve(path.dirname(documentUri.fsPath), '..')).fsPath
   )
 
   if (workspaceFolder) {
@@ -86,7 +93,7 @@ function activate (context) {
 
     const pattern = new vscode.RelativePattern(
       workspaceFolder,
-      `**/${CALLBACKS_DIRECTORY_NAME}/**/*.js`
+      `**/${CALLBACKS_DIRECTORY_NAME}/**/*${CALLBACK_FILENAME_EXTENSION}`
     )
     
     const watcher = vscode.workspace.createFileSystemWatcher(pattern)
@@ -99,13 +106,13 @@ function activate (context) {
   }
 }
 
-function manageId (editor, machine, id = 'index') {
+function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
   console.log(`[wirestate] managing callback for ID [${id}] for machine [${machine}]`)
 
   const statechartsPath = path.dirname(editor.document.fileName)
   const callbacksPath = path.resolve(statechartsPath, CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS)
   const callbacksIndexFile = path.join(callbacksPath, CALLBACKS_INDEX_FILENAME)
-  const callbackFilename = `${id}.js`
+  const callbackFilename = `${id}${CALLBACK_FILENAME_EXTENSION}`
   const callbackFile = path.join(callbacksPath, machine, callbackFilename)
 
   // Make sure callbacks/index.js exists
@@ -189,10 +196,10 @@ function rebuildIndexFile (filename, mode = 'add') {
 
   const stateId = path.basename(pathParts.pop(), '.js')
   const machineName = pathParts.pop()
-  const key = stateId === 'index'
+  const key = stateId === MACHINE_ONLY_STATE_NAME
     ? `${machineName}`
     : `${machineName}/${stateId}`
-  const requirePath = stateId === 'index'
+  const requirePath = stateId === MACHINE_ONLY_STATE_NAME
     ? `./${machineName}`
     : `./${machineName}/${stateId}`
 

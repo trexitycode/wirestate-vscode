@@ -2,10 +2,11 @@
 
 This extension provides syntax highlighting for the WireState markup language,
 as well as allowing you to easily open the associated callback file from the
-wirestate file itself. Additionally, the callbacks/index.js thta maintains
-the various require statements for each callback is now automatically maintained.
+wirestate file itself. Additionally, the `callbacks/index.js` that maintains
+the various `require` statements for each callback is now automatically maintained.
 
 ## Quick Start
+
 Git clone the project into a folder of your choosing. In this example, we are
 cloning it into your home folder under the `wirestate-vscode/` directory.
 

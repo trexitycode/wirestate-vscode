@@ -1,4 +1,4 @@
-# WireState Syntax Highlighting
+# WireState for Visual Studio Code
 
 This extension provides syntax highlighting for the WireState markup language,
 as well as allowing you to easily open the associated callback file from the
@@ -14,7 +14,7 @@ $ git clone https://github.com/launchfort/wirestate-vscode.git ~/wirestate-vscod
 $ ln -s ~/wirestate-vscode ~/.vscode/extensions/wirestate-vscode
 ```
 
-Make sure to reload VSCode for the changes to be applied.
+Make sure to reload VS Code for the changes to be applied.
 
 ## Features
 

@@ -12,7 +12,7 @@ const DEFAULT_CALLBACK_CONTENTS_CURSOR_POSITION = [4, 4]
 const DEFAULT_CALLBACK_CONTENTS = [
   `import { data } from '../../data'`,
   ``,
-  `export default function (evt, send) {`,
+  `export default (evt, send) => {`,
   `  try {`,
   `    `,
   `  } catch (error) {`,

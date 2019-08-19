@@ -8,10 +8,17 @@ const CALLBACKS_DIRECTORY_NAME = 'callbacks'
 const CALLBACK_FILENAME_EXTENSION = '.js'
 const CALLBACKS_INDEX_FILENAME = 'index.js'
 const CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS = `../${CALLBACKS_DIRECTORY_NAME}`
-const DEFAULT_CALLBACK_CONTENTS_CURSOR_POSITION = [1, 2]
+const DEFAULT_CALLBACK_CONTENTS_CURSOR_POSITION = [4, 4]
 const DEFAULT_CALLBACK_CONTENTS = [
+  `import { data } from '../../data'`,
+  ``,
   `export default function (evt, send) {`,
-  `  `,
+  `  try {`,
+  `    `,
+  `  } catch (error) {`,
+  `    console.error(error)`,
+  `    send({ type: 'error', error })`,
+  `  }`,
   `}`,
   ``
 ].join('\n')

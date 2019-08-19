@@ -8,13 +8,14 @@ const CALLBACKS_DIRECTORY_NAME = 'callbacks'
 const CALLBACK_FILENAME_EXTENSION = '.js'
 const CALLBACKS_INDEX_FILENAME = 'index.js'
 const CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS = `../${CALLBACKS_DIRECTORY_NAME}`
-const DEFAULT_CALLBACK_CONTENTS_CURSOR_POSITION = [4, 4]
+const DEFAULT_CALLBACK_CONTENTS_CURSOR_START_POSITION = [4, 4]
+const DEFAULT_CALLBACK_CONTENTS_CURSOR_END_POSITION = [4, 18]
 const DEFAULT_CALLBACK_CONTENTS = [
   `import { data } from '../../data'`,
   ``,
   `export default (evt, send) => {`,
   `  try {`,
-  `    `,
+  `    // send('...')`,
   `  } catch (error) {`,
   `    console.error(error)`,
   `    send({ type: 'error', error })`,
@@ -164,8 +165,9 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
       })
       .then(() => {
         const cursor = newEditor.selection.active
-        const nextCursor = cursor.with(...DEFAULT_CALLBACK_CONTENTS_CURSOR_POSITION)
-        newEditor.selection = new vscode.Selection(nextCursor, nextCursor)
+        const nextCursorStart = cursor.with(...DEFAULT_CALLBACK_CONTENTS_CURSOR_START_POSITION)
+        const nextCursorEnd = cursor.with(...DEFAULT_CALLBACK_CONTENTS_CURSOR_END_POSITION)
+        newEditor.selection = new vscode.Selection(nextCursorStart, nextCursorEnd)
       })
   }
 }

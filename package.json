@@ -19,8 +19,13 @@
     "languages": [
       {
         "id": "wirestate",
-        "aliases": ["WireState", "wirestate"],
-        "extensions": [".wirestate"],
+        "aliases": [
+          "WireState",
+          "wirestate"
+        ],
+        "extensions": [
+          ".wirestate"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],

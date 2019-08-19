@@ -12,6 +12,8 @@ cloning it into your home folder under the `wirestate-vscode/` directory.
 
 ```
 $ git clone https://github.com/launchfort/wirestate-vscode.git ~/wirestate-vscode
+$ cd ~/wirestate-vscode
+$ npm install
 $ ln -s ~/wirestate-vscode ~/.vscode/extensions/wirestate-vscode
 ```
 

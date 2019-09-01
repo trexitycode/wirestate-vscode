@@ -128,8 +128,10 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
   const callbackFile = path.join(callbacksPath, machine, callbackFilename)
 
   // Make sure callbacks/index.js exists
-  if (!fs.existsSync(callbacksIndexFile)) {
+  if (!fs.existsSync(callbacksPath)) {
     fs.mkdirSync(callbacksPath, { recursive: true })
+  }
+  if (!fs.existsSync(callbacksIndexFile)) {
     fs.writeFileSync(callbacksIndexFile, `export const callbacks = {}`)
   }
 

@@ -1,7 +1,6 @@
 const vscode = require('vscode')
 const fs = require('fs')
 const path = require('path')
-const recast = require('recast')
 
 const MACHINE_ONLY_STATE_NAME = 'index'
 const CALLBACKS_DIRECTORY_NAME = 'callbacks'
@@ -84,14 +83,13 @@ function activate (context) {
 
   context.subscriptions.push(disposable)
 
-  // Watch for callback files being saved, so as to auto-update the index file
-  // with the appropriate require statement
-  disposables.push(vscode.workspace.onDidSaveTextDocument(document => {
-    rebuildIndexFile(document.fileName, 'add')
-  }))
+  // // Watch for callback files being saved, so as to auto-update the index file
+  // // with the appropriate require statement
+  // disposables.push(vscode.workspace.onDidSaveTextDocument(document => {
+  //   rebuildIndexFile(document.fileName, 'add')
+  // }))
 
-  // Watch for callback files being deleted, so as to auto-update the index file
-  // by removing the appropriate require statement
+  // Watch for callback files being changed, so as to auto-update the index file
   const documentUri = vscode.window.activeTextEditor.document.uri
   const workspaceFolder = (
     vscode.workspace.getWorkspaceFolder(documentUri) ||
@@ -109,9 +107,21 @@ function activate (context) {
     )
     
     const watcher = vscode.workspace.createFileSystemWatcher(pattern)
+    let rebuildDebounceId
     
+    disposables.push(watcher.onDidChange(uri => {
+      clearTimeout(rebuildDebounceId)
+      rebuildDebounceId = setTimeout(() => rebuildIndexFile(uri.fsPath), 1000)
+    }))
+
+    disposables.push(watcher.onDidCreate(uri => {
+      clearTimeout(rebuildDebounceId)
+      rebuildDebounceId = setTimeout(() => rebuildIndexFile(uri.fsPath), 1000)
+    }))
+
     disposables.push(watcher.onDidDelete(uri => {
-      rebuildIndexFile(uri.fsPath, 'remove')
+      clearTimeout(rebuildDebounceId)
+      rebuildDebounceId = setTimeout(() => rebuildIndexFile(uri.fsPath), 1000)
     }))
   } else {
     console.log('[wirestate] no workspace folder could be determined, cannot watch for deleted callback files')
@@ -199,7 +209,7 @@ function findMachine (editor, lineNo, id) {
   return machine
 }
 
-function rebuildIndexFile (filename, mode = 'add') {
+function rebuildIndexFile (filename) {
   const pathParts = filename.split(path.sep)
 
   // [..., 'src', 'callbacks', 'Machine Name', 'State Name.js']
@@ -214,84 +224,61 @@ function rebuildIndexFile (filename, mode = 'add') {
     return
   }
 
-  const stateId = path.basename(pathParts.pop(), '.js')
-  const machineName = pathParts.pop()
-
-  const key = stateId === MACHINE_ONLY_STATE_NAME
-    ? `${machineName}`
-    : `${machineName}/${stateId}`
-
-  const requirePath = stateId === MACHINE_ONLY_STATE_NAME
-    ? `./${machineName}`
-    : `./${machineName}/${stateId}`
-
-  const callbacksPath = path.join(...pathParts.slice(0, pathParts.length))
+  const callbacksPath = path.join(...pathParts.slice(0, pathParts.length - FROM_END + 1))
   const callbacksIndexFile = path.join(callbacksPath, CALLBACKS_INDEX_FILENAME)
 
-  console.log('[wirestate] key:', key)
-  console.log('[wirestate] require path:', requirePath)
-  console.log('[wirestate] rebuild mode:', mode)
+  // Read all directories in the callbacks/ folder (machine names)
+  vscode.workspace.fs.readDirectory(vscode.Uri.file(callbacksPath))
+    .then(machineEntries => {
+      return Promise.all(machineEntries
+        // Make sure to only keep directories (not files)
+        .filter(([, fileType]) => fileType === vscode.FileType.Directory)
+        .map(([machineName]) => {
+          // Read all files in this machine's folder
+          return vscode.workspace.fs.readDirectory(vscode.Uri.file(path.join(callbacksPath, machineName)))
+            .then(callbackEntires => {
+              return callbackEntires
+                // Make sure to only keep files (callback js files)
+                .filter(([, fileType]) => fileType === vscode.FileType.File)
+                // Map each entry to its callback key and require path
+                .map(([filename]) => {
+                  const pathParts = filename.split(path.sep)
+                  const stateId = path.basename(pathParts.pop(), '.js')
 
-  const indexFileContents = fs.readFileSync(callbacksIndexFile).toString()
-  const updatedIndexFileContents = rebuildIndexFileContents(indexFileContents, key, requirePath, mode)
+                  const key = stateId === MACHINE_ONLY_STATE_NAME
+                    ? `${machineName}`
+                    : `${machineName}/${stateId}`
 
-  if (indexFileContents !== updatedIndexFileContents) {
-    console.log('[wirestate] saved rebuilt callbacks index file', callbacksIndexFile)
-    fs.writeFileSync(callbacksIndexFile, updatedIndexFileContents)
-  } else {
-    console.log('[wirestate] no changes to callbacks index file', callbacksIndexFile)
-  }
+                  const requirePath = stateId === MACHINE_ONLY_STATE_NAME
+                    ? `./${machineName}`
+                    : `./${machineName}/${stateId}`
+
+                  return { key, requirePath }
+                })
+            })
+        })
+      )
+    })
+    .then(callbackList => {
+      const indexFileContents = fs.readFileSync(callbacksIndexFile).toString()
+      const updatedIndexFileContents = rebuildIndexFileContents(callbackList)
+  
+      if (indexFileContents !== updatedIndexFileContents) {
+        console.log('[wirestate] saved rebuilt callbacks index file', callbacksIndexFile)
+        fs.writeFileSync(callbacksIndexFile, updatedIndexFileContents)
+      } else {
+        console.log('[wirestate] no changes to callbacks index file', callbacksIndexFile)
+      }
+    })
 }
 
-function rebuildIndexFileContents (contents, key, requirePath, mode) {
-  const ast = recast.parse(contents)
-  const b = recast.types.builders
-
-  const callbacksNamedExport = ast.program.body[0]
-  if (callbacksNamedExport.type !== 'ExportNamedDeclaration') return
-
-  const callbacksConst = callbacksNamedExport.declaration
-  if (callbacksConst.type !== 'VariableDeclaration') return
-  if (callbacksConst.kind !== 'const') return
-
-  const callbacksVar = callbacksConst.declarations[0]
-  if (callbacksVar.type !== 'VariableDeclarator') return
-  if (callbacksVar.id.name !== 'callbacks') return
-
-  const callbacksObject = callbacksVar.init
-  if (callbacksObject.type !== 'ObjectExpression') return
-
-  const callbacksObjectProps = callbacksObject.properties
-
-  const index = callbacksObjectProps.findIndex(prop => {
-    return prop.key.value === key
-  })
-
-  if (mode === 'add') {
-    if (index === -1) {
-      callbacksObjectProps.push(
-        b.property(
-          'init',
-          b.literal(key),
-          b.memberExpression(
-            b.callExpression(
-              b.identifier('require'),
-              [b.literal(requirePath)]
-            ),
-            b.identifier('default')
-          )
-        )
-      )
-    }
-  } else if (mode === 'remove') {
-    if (index >= 0) {
-      callbacksObjectProps.splice(index, 1)
-    }
-  } else {
-    throw new Error('Invalid mode: ' + mode)
-  }
-
-  return recast.print(ast, { quote: 'single' }).code
+function rebuildIndexFileContents (callbackList) {
+  return `export const callbacks = {
+${callbackList.flat().map(({ key, requirePath }) => {
+  return `  '${key}': require('${requirePath}').default`
+}).join(',\n')}
+}
+`
 }
 
 exports.activate = activate

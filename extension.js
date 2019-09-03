@@ -240,6 +240,8 @@ function rebuildIndexFile (filename) {
               return callbackEntires
                 // Make sure to only keep files (callback js files)
                 .filter(([, fileType]) => fileType === vscode.FileType.File)
+                // Make sure we only keep the .js files
+                .filter(([fileName]) => fileName.endsWith('.js'))
                 // Map each entry to its callback key and require path
                 .map(([filename]) => {
                   const pathParts = filename.split(path.sep)

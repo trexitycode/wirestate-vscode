@@ -2,7 +2,7 @@
   "name": "wirestate-vscode",
   "displayName": "WireState VSCode",
   "description": "WireState syntax highlighting and commands",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "publisher": "launchfort",
   "engines": {
     "vscode": "^1.37.0"
@@ -12,7 +12,7 @@
   ],
   "activationEvents": [
     "onLanguage:wirestate",
-    "workspaceContains:.wirestate"
+    "workspaceContains:**/*.wirestate"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -66,7 +66,8 @@
     "watch": "tsc -watch -p ./"
   },
   "dependencies": {
-    "recast": "^0.18.2"
+    "recast": "^0.18.2",
+    "vscode-languageclient": "^5.2.1"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",

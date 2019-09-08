@@ -34,10 +34,11 @@ function activate (context) {
   // Must register wordPattern via setLanguageConfiguration due to the following issue:
   // https://github.com/Microsoft/vscode/issues/42649
   vscode.languages.setLanguageConfiguration('wirestate', {
-    wordPattern: /[@a-zA-Z0-9"]+(\s+[a-zA-Z0-9"]+)*/
+    // wordPattern: /[@a-zA-Z0-9"]+(\s+[a-zA-Z0-9"]+)*/
+    wordPattern: /[@a-zA-Z0-9"]+[@a-zA-Z0-9" ]*/
   })
 
-	let disposable = vscode.commands.registerCommand('extension.manageCallback', function () {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.manageCallback', function () {
     console.log('[wirestate] extension invoked')
 
     const editor = vscode.window.activeTextEditor
@@ -50,7 +51,7 @@ function activate (context) {
       }
 
       const text = editor.document.getText(range)
-      const word = text
+      const word = text.trim()
 
       if (word.startsWith('@machine ')) {
         console.log('[wirestate] manage machine from @machine')
@@ -79,9 +80,9 @@ function activate (context) {
     } catch (error) {
       vscode.window.showErrorMessage(error.message)
     }
-  })
+  }))
 
-  context.subscriptions.push(disposable)
+  context.subscriptions.push(vscode.languages.registerDocumentHighlightProvider({ language: 'wirestate', scheme: 'file' }, new WirestateDocumentHighlightProvider()))
 
   // // Watch for callback files being saved, so as to auto-update the index file
   // // with the appropriate require statement

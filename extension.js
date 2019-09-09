@@ -82,8 +82,6 @@ function activate (context) {
     }
   }))
 
-  context.subscriptions.push(vscode.languages.registerDocumentHighlightProvider({ language: 'wirestate', scheme: 'file' }, new WirestateDocumentHighlightProvider()))
-
   // // Watch for callback files being saved, so as to auto-update the index file
   // // with the appropriate require statement
   // disposables.push(vscode.workspace.onDidSaveTextDocument(document => {

@@ -19,6 +19,9 @@
     },
     {
       "include": "#uses-as"
+    },
+    {
+      "include": "#imports"
     }
 	],
 	"repository": {
@@ -109,6 +112,29 @@
         },
         "5": {
           "name": "variable.parameter.alias.uses-as.wirestate"
+        }
+      }
+    },
+    "imports": {
+      "match": "(import) ({)([A-Za-z0-9 ,_-]+)(}) (from) ([\"']?[A-Za-z0-9 \\./_-]+[\"']?)\\n",
+      "captures": {
+        "1": {
+          "name": "keyword.control.import.imports.wirestate"
+        },
+        "2": {
+          "name": "meta.brace.curly.imports.wirestate"
+        },
+        "3": {
+          "name": "variable.parameter.names.imports.wirestate"
+        },
+        "4": {
+          "name": "meta.brace.curly.imports.wirestate"
+        },
+        "5": {
+          "name": "keyword.control.from.imports.wirestate"
+        },
+        "6": {
+          "name": "string.quoted.single.imports.wirestate"
         }
       }
     }

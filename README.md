@@ -29,10 +29,15 @@ N/A
 
 ## Release Notes
 
+### 2.0.1
+
+- Added support for syntax highlighting of import statements
+- Added support for opening imported file using the Manage WireState callback
+
 ### 2.0.0
 
 You're now able to put your cursor on any of the machine/state nodes, then
-// right-click and choose "Manage WireState callback..." (or key shortcut Cmd+Alt+/).
+right-click and choose "Manage WireState callback..." (or key shortcut Cmd+Alt+/).
 It will open the correct callback file, or create one for you if not there already (won't save to disk until you choose to, so it's easy to just close without committing to it).
 
 Additionally, when you save or delete a callback file, the callbacks/index.js

@@ -52,6 +52,7 @@ function activate (context) {
 
       const text = editor.document.getText(range)
       const word = text.trim()
+      const line = editor.document.lineAt(range.start.line).text
 
       if (word.startsWith('@machine ')) {
         console.log('[wirestate] manage machine from @machine')
@@ -61,6 +62,10 @@ function activate (context) {
         console.log('[wirestate] manage machine from @use')
         const machine = word.replace('@use ', '').replace(/^"/, '').replace(/"$/, '')
         manageId(editor, machine)
+      } else if (line.startsWith('import {')) {
+        console.log('[wirestate] switch to file from import')
+        const file = line.replace('import ', '').replace(/{[^}]+/, '').replace('} from ', '').replace(/^['"]/, '').replace(/['"]$/, '')
+        manageFile(editor, file, word)
       } else {
         const lineNo = editor.selection.active.line
         const textLine = editor.document.lineAt(lineNo)
@@ -179,6 +184,23 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
         const nextCursorStart = cursor.with(...DEFAULT_CALLBACK_CONTENTS_CURSOR_START_POSITION)
         const nextCursorEnd = cursor.with(...DEFAULT_CALLBACK_CONTENTS_CURSOR_END_POSITION)
         newEditor.selection = new vscode.Selection(nextCursorStart, nextCursorEnd)
+      })
+  }
+}
+
+function manageFile (editor, file, target) {
+  console.log('[wirestate] managing file', file, 'target', target)
+
+  const statechartsPath = path.dirname(editor.document.fileName)
+  const wsFileRaw = path.resolve(statechartsPath, file)
+  const wsFile = fs.existsSync(wsFileRaw) ? wsFileRaw : `${wsFileRaw}.wirestate`
+
+  if (fs.existsSync(wsFile)) {
+    console.log('[wirestate] open existing', wsFile)
+
+    vscode.workspace.openTextDocument(wsFile)
+      .then(doc => {
+        return vscode.window.showTextDocument(doc)
       })
   }
 }

@@ -2,7 +2,7 @@
   "name": "wirestate-vscode",
   "displayName": "WireState VSCode",
   "description": "WireState syntax highlighting and commands",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "publisher": "launchfort",
   "engines": {
     "vscode": "^1.37.0"
@@ -12,7 +12,8 @@
   ],
   "activationEvents": [
     "onLanguage:wirestate",
-    "workspaceContains:**/*.wirestate"
+    "workspaceContains:**/*.wirestate",
+    "onCommand:visualizer.render"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -38,24 +39,39 @@
     ],
     "commands": [
       {
-        "command": "extension.manageCallback",
+        "command": "wirestate.manageCallback",
         "title": "Manage WireState Callback..."
+      },
+      {
+        "command": "wirestate.visualize",
+        "title": "Visualize WireState..."
       }
     ],
     "menus": {
       "editor/context": [
         {
           "when": "editorLangId == wirestate",
-          "command": "extension.manageCallback",
+          "command": "wirestate.manageCallback",
+          "group": "z_commands"
+        },
+        {
+          "when": "editorLangId == wirestate",
+          "command": "wirestate.visualize",
           "group": "z_commands"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "extension.manageCallback",
+        "command": "wirestate.manageCallback",
         "key": "alt+ctrl+/",
         "mac": "alt+cmd+/",
+        "when": "editorLangId == wirestate && editorTextFocus"
+      },
+      {
+        "command": "wirestate.visualize",
+        "key": "alt+ctrl+.",
+        "mac": "alt+cmd+.",
         "when": "editorLangId == wirestate && editorTextFocus"
       }
     ]
@@ -66,13 +82,16 @@
     "watch": "tsc -watch -p ./"
   },
   "dependencies": {
+    "@launchfort/wirestate": "github:launchfort/wirestate#3.0.2",
+    "react": "16.13.0",
+    "react-dom": "16.13.0",
     "recast": "^0.18.2",
     "vscode-languageclient": "^5.2.1"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^10.12.21",
+    "@types/node": "^13.7.7",
     "@types/vscode": "^1.37.0",
     "eslint": "^5.13.0",
     "glob": "^7.1.4",

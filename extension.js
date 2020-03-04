@@ -1,6 +1,7 @@
 const vscode = require('vscode')
 const fs = require('fs')
 const path = require('path')
+const WireState = require('@launchfort/wirestate/lib/index')
 
 const MACHINE_ONLY_STATE_NAME = 'index'
 const CALLBACKS_DIRECTORY_NAME = 'callbacks'
@@ -10,9 +11,7 @@ const CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS = `../${CALLBACKS_DIRECTORY_NAME}
 const DEFAULT_CALLBACK_CONTENTS_CURSOR_START_POSITION = [4, 4]
 const DEFAULT_CALLBACK_CONTENTS_CURSOR_END_POSITION = [4, 18]
 const DEFAULT_CALLBACK_CONTENTS = [
-  `import { data } from '../../data'`,
-  ``,
-  `export default (evt, send) => {`,
+  `export default function (evt, send, data) {`,
   `  try {`,
   `    // send('...')`,
   `  } catch (error) {`,
@@ -24,6 +23,9 @@ const DEFAULT_CALLBACK_CONTENTS = [
 ].join('\n')
 
 let disposables = []
+
+let visualizerInstance
+const visualizerViewType = 'visualizer'
 
 function activate (context) {
   console.log('[wirestate] extension activated')
@@ -38,60 +40,72 @@ function activate (context) {
     wordPattern: /[@a-zA-Z0-9"]+[@a-zA-Z0-9" ]*/
   })
 
-	context.subscriptions.push(vscode.commands.registerCommand('extension.manageCallback', function () {
-    console.log('[wirestate] extension invoked')
+	context.subscriptions.push(
+    vscode.commands.registerCommand('wirestate.manageCallback', function () {
+      console.log('[wirestate] extension invoked')
 
-    const editor = vscode.window.activeTextEditor
+      const editor = vscode.window.activeTextEditor
 
-    try {
-      const range = editor.document.getWordRangeAtPosition(editor.selection.active)
+      try {
+        const range = editor.document.getWordRangeAtPosition(editor.selection.active)
 
-      if (!range) {
-        throw new Error('Could not determine target state ID')
-      }
-
-      const text = editor.document.getText(range)
-      const word = text.trim()
-      const line = editor.document.lineAt(range.start.line).text
-
-      if (word.startsWith('@machine ')) {
-        console.log('[wirestate] manage machine from @machine')
-        const machine = word.replace('@machine ', '').replace(/^"/, '').replace(/"$/, '')
-        manageId(editor, machine)
-      } else if (word.startsWith('@use ')) {
-        console.log('[wirestate] manage machine from @use')
-        const machine = word.replace('@use ', '').replace(/^"/, '').replace(/"$/, '')
-        manageId(editor, machine)
-      } else if (line.startsWith('import {')) {
-        console.log('[wirestate] switch to file from import')
-        const file = line.replace('import ', '').replace(/{[^}]+/, '').replace('} from ', '').replace(/^['"]/, '').replace(/['"]$/, '')
-        manageFile(editor, file, word)
-      } else {
-        const lineNo = editor.selection.active.line
-        const textLine = editor.document.lineAt(lineNo)
-        const line = textLine.text.trim()
-        const wordPosition = line.indexOf(word)
-        const arrowPosition = line.indexOf('->')
-
-        if (arrowPosition === -1 || arrowPosition < wordPosition) {
-          console.log('[wirestate] manage ID')
-          const machine = findMachine(editor, lineNo, word)
-          manageId(editor, machine, word)
-        } else {
-          console.log('[wirestate] manage event')
-          manageEvent(editor, word)
+        if (!range) {
+          throw new Error('Could not determine target state ID')
         }
-      }
-    } catch (error) {
-      vscode.window.showErrorMessage(error.message)
-    }
-  }))
 
-  // // Watch for callback files being saved, so as to auto-update the index file
-  // // with the appropriate require statement
-  // disposables.push(vscode.workspace.onDidSaveTextDocument(document => {
-  //   rebuildIndexFile(document.fileName, 'add')
-  // }))
+        const text = editor.document.getText(range)
+        const word = text.trim()
+        const line = editor.document.lineAt(range.start.line).text
+
+        if (word.startsWith('@machine ')) {
+          console.log('[wirestate] manage machine from @machine')
+          const machine = word.replace('@machine ', '').replace(/^"/, '').replace(/"$/, '')
+          manageId(editor, machine)
+        } else if (word.startsWith('@use ')) {
+          console.log('[wirestate] manage machine from @use')
+          const machine = word.replace('@use ', '').replace(/^"/, '').replace(/"$/, '')
+          manageId(editor, machine)
+        } else if (line.startsWith('@import {')) {
+          console.log('[wirestate] switch to file from @import')
+          const file = line.replace('@import ', '').replace(/{[^}]+/, '').replace('} from ', '').replace(/^['"]/, '').replace(/['"]$/, '')
+          manageFile(editor, file, word)
+        } else {
+          const lineNo = editor.selection.active.line
+          const textLine = editor.document.lineAt(lineNo)
+          const line = textLine.text.trim()
+          const wordPosition = line.indexOf(word)
+          const arrowPosition = line.indexOf('->')
+
+          if (arrowPosition === -1 || arrowPosition < wordPosition) {
+            console.log('[wirestate] manage ID')
+            const machine = findMachine(editor, lineNo, word)
+            manageId(editor, machine, word)
+          } else {
+            console.log('[wirestate] manage event')
+            const machine = findMachine(editor, lineNo, word)
+            manageEvent(editor, machine, word)
+          }
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(error.message)
+      }
+    })
+  )
+
+  // Register the WireState visualizer preview
+	context.subscriptions.push(
+    vscode.commands.registerCommand('wirestate.visualize', async () => {
+      console.log('[wirestate] visualizer invoked')
+
+      const editor = vscode.window.activeTextEditor
+
+      const statechartPath = editor.document.fileName
+      const statechartText = editor.document.getText()
+      const isUntitled = editor.document.isUntitled
+
+      await showVisualizer(context.extensionPath, statechartPath, statechartText, isUntitled)
+    })
+  )
 
   // Watch for callback files being changed, so as to auto-update the index file
   const documentUri = vscode.window.activeTextEditor.document.uri
@@ -109,10 +123,10 @@ function activate (context) {
       workspaceFolder,
       `**/${CALLBACKS_DIRECTORY_NAME}/**/*${CALLBACK_FILENAME_EXTENSION}`
     )
-    
+
     const watcher = vscode.workspace.createFileSystemWatcher(pattern)
     let rebuildDebounceId
-    
+
     disposables.push(watcher.onDidChange(uri => {
       clearTimeout(rebuildDebounceId)
       rebuildDebounceId = setTimeout(() => rebuildIndexFile(uri.fsPath), 1000)
@@ -205,9 +219,13 @@ function manageFile (editor, file, target) {
   }
 }
 
-function manageEvent (editor, event) {
-  console.log('[wirestate] managing event', event)
-  throw new Error(`No support yet for managing events (${event})`)
+function manageEvent (editor, machine, event) {
+  console.log('[wirestate] managing event:', event)
+  if (!visualizerInstance) {
+    throw new Error(`No visualizer instance found to send event: ${event}`)
+  }
+
+  visualizerInstance.webview.postMessage({ send: event, machine })
 }
 
 function findMachine (editor, lineNo, id) {
@@ -285,7 +303,7 @@ function rebuildIndexFile (filename) {
     .then(callbackList => {
       const indexFileContents = fs.readFileSync(callbacksIndexFile).toString()
       const updatedIndexFileContents = rebuildIndexFileContents(callbackList)
-  
+
       if (indexFileContents !== updatedIndexFileContents) {
         console.log('[wirestate] saved rebuilt callbacks index file', callbacksIndexFile)
         fs.writeFileSync(callbacksIndexFile, updatedIndexFileContents)
@@ -303,6 +321,207 @@ ${callbackList.flat().map(({ key, requirePath }) => {
 }
 `
 }
+
+// -----------------------------------------------------------------------------
+// Visualizer
+// -----------------------------------------------------------------------------
+
+async function generate (statechartPath, statechartText, isUntitled) {
+  // @ts-ignore
+  const cache = new WireState.MemoryCache()
+
+  if (isUntitled) {
+    // @ts-ignore
+    return WireState.compileFromText(statechartText, statechartPath, {
+      srcDir: './',
+      generatorName: 'xstate',
+      cache,
+      disableCallbacks: true
+    })
+  } else {
+    // @ts-ignore
+    return WireState.compile(statechartPath, {
+      srcDir: path.dirname(statechartPath),
+      generatorName: 'xstate',
+      cache,
+      disableCallbacks: true
+    })
+  }
+}
+
+async function getHtmlForWebview (webview, extensionPath, statechartPath, statechartText, isUntitled) {
+  let output = await generate(statechartPath, statechartText, isUntitled)
+
+  // Until we have support for the following in WireState, strip out the empty actions
+  output = output.replace(/,\n\s+"actions": function \(\) \{\}/gm, '')
+
+  // Replace "import" statement with web style
+  output = output.replace(
+    "import { Machine, StateNode } from 'xstate'",
+    "var Machine = XState.Machine"
+  )
+
+  // Replace "export" with web style
+  output = output.replace(
+    "export function wirestate",
+    "function wirestate"
+  )
+
+  // Fix empty machines to at least have one state
+  output = output.replace(
+    /([ ]*)machines\['([^']+)'\] = Machine\({\n\s*"id": "([^"]+)"\n\s*}\)/gm,
+    '$1machines[\'$2\'] = Machine({\n$1$1"id": "$3",\n$1$1"initial": "<no state>",\n$1$1"states": {\n$1$1$1"<no state>": {}\n$1$1}\n$1})'
+  )
+
+  const scripts = [
+    'node_modules/react/umd/react.production.min.js',
+    'node_modules/react-dom/umd/react-dom.production.min.js',
+    'vendor/xstate.web.js',
+    'vendor/Treeify.js',
+    'vendor/stateValueLeafIds.js',
+    'vendor/useMachine.js',
+    'vendor/ServiceViz.js'
+  ]
+    .map(script => vscode.Uri.file(path.join(extensionPath, script)))
+    .map(script => webview.asWebviewUri(script))
+
+  const styles = [
+    'visualizer.css'
+  ]
+    .map(script => vscode.Uri.file(path.join(extensionPath, script)))
+    .map(script => webview.asWebviewUri(script))
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'unsafe-inline' ${webview.cspSource}; style-src 'unsafe-inline' ${webview.cspSource};" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WireState Visualizer</title>
+<script>process = { env: 'production' }</script>
+${scripts.map(script => `<script src="${script}"></script>`).join('\n')}
+${styles.map(style => `<link href="${style}" rel="stylesheet" />`).join('\n')}
+<script>
+${output}
+</script>
+</head>
+<body>
+<div id="root">Loading</div>
+<script>
+  const machines = wirestate({ callbacks: {} })
+  ReactDOM.render(
+    React.createElement(
+      'div',
+      { className: 'container' },
+      ...Object.keys(machines).map(key => (
+        React.createElement(
+          'div',
+          { key, className: 'machine machine-' + key },
+          React.createElement(
+            'h2',
+            null,
+            key
+          ),
+          React.createElement(
+            ServiceViz,
+            { service: machines[key] }
+          )
+        )
+      ))
+    ),
+    document.getElementById('root')
+  )
+</script>
+</body>
+</html>`
+
+  return html
+}
+
+async function createVisualizerInstance (panel, extensionPath, statechartPath, statechartText, isUntitled) {
+  const disposables = []
+
+  const update = async function () {
+    panel.title = 'Visualizer'
+		panel.webview.html = await getHtmlForWebview(
+      panel.webview,
+      extensionPath,
+      statechartPath,
+      statechartText,
+      isUntitled
+    )
+  }
+
+  const dispose = function () {
+    visualizerInstance = undefined
+
+    panel.dispose()
+
+    while (disposables.length) {
+      const handle = disposables.pop()
+      if (handle) {
+        handle.dispose()
+      }
+    }
+  }
+
+  // Set the webview's initial html content
+  await update()
+
+  // Listen for when the panel is disposed
+  // This happens when the user closes the panel or when the panel is closed programatically
+  panel.onDidDispose(() => dispose(), null, disposables);
+
+  // Update the content based on view changes
+  panel.onDidChangeViewState(async () => {
+    if (panel.visible) {
+      await update()
+    }
+  }, null, disposables)
+
+  // Handle messages from the webview
+  // TODO: whatever we want to send back, handle it here
+  panel.webview.onDidReceiveMessage(message => {
+    switch (message.command) {
+      case 'alert':
+        vscode.window.showErrorMessage(message.text)
+        return
+    }
+  }, null, disposables)
+
+  return panel
+}
+
+async function showVisualizer (extensionPath, statechartPath, statechartText, isUntitled) {
+  const column = vscode.window.activeTextEditor
+    ? vscode.window.activeTextEditor.viewColumn
+    : undefined
+
+  // Instance already available, reveal and return it
+  if (visualizerInstance) {
+    visualizerInstance.reveal(column)
+    return visualizerInstance
+  }
+
+  const panel = vscode.window.createWebviewPanel(
+    visualizerViewType,
+    'Visualizer',
+    column || vscode.ViewColumn.One,
+    {
+      // Enable javascript in the webview
+      enableScripts: true
+    }
+  );
+
+  // Create and memoize the instance
+  visualizerInstance = await createVisualizerInstance(panel, extensionPath, statechartPath, statechartText, isUntitled)
+
+  return visualizerInstance
+}
+
+// -----------------------------------------------------------------------------
+// Exports / cleanup
+// -----------------------------------------------------------------------------
 
 exports.activate = activate
 

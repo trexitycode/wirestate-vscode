@@ -1,0 +1,50 @@
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.state-node {
+  border: 1px solid #c1c1c1;
+  background: white;
+  padding: 5px;
+  display: inline-block;
+  color: #333333;
+}
+
+.event-container {
+  list-style-type: none;
+  margin: 0;
+  padding: 0 0 0 8px;
+}
+
+.event {
+  display: block;
+  color: #5d9ed0;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.state-node[data-type='atomic'][data-active] {
+  background: #3d3dc3;
+  border: 1px dashed #a1a1a1;
+  color: white;
+}
+
+.state-node[data-type='atomic'][data-active] .event {
+  color: #dcb975;
+}
+
+.state-key {
+  margin: 0 0 4px 0;
+}
+
+.state-node-children {
+  display: grid;
+  padding: 20px;
+  grid-column-gap: 20px;
+  grid-row-gap: 20px;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows: auto;
+}

@@ -116,7 +116,7 @@
       }
     },
     "imports": {
-      "match": "(import) ({)([A-Za-z0-9 ,_-]+)(}) (from) ([\"']?[A-Za-z0-9 \\./_-]+[\"']?)\\n",
+      "match": "(@import) ({)([A-Za-z0-9 ,_-]+)(}) (from) ([\"']?[A-Za-z0-9 \\./_-]+[\"']?)\\n",
       "captures": {
         "1": {
           "name": "keyword.control.import.imports.wirestate"

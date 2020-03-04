@@ -29,6 +29,15 @@ N/A
 
 ## Release Notes
 
+### 2.1.0
+
+- Added basic visualizer to preview your WireState statecharts. Choose
+"Visualize WireState..." from the context menu (or key shortcut Cmd+Alt+.), and
+an interactive visualizer will open in another pane. Additionally, if you hit
+the "Manage WireState callback" from the context menu or keyboard shortcut on
+an event, it will send that event to the visualizer
+- Fixed bug where opening imported machines didn't work
+
 ### 2.0.1
 
 - Added support for syntax highlighting of import statements

@@ -11,6 +11,8 @@ function getChildren (machine) {
 
 const Context = React.createContext(null)
 
+let scrollBlocked = false
+
 function StateNodeViz ({ stateNode }) {
   const childNodes = React.useMemo(() => {
     return getChildren(stateNode)
@@ -24,7 +26,13 @@ function StateNodeViz ({ stateNode }) {
   React.useEffect(() => {
     if (active) {
       const el = document.getElementById(stateNodePath)
-      el && scrollIntoViewIfOutOfView(el, { behavior: 'smooth' })
+      if (el) {
+        if (!scrollBlocked) {
+          scrollBlocked = true
+          scrollIntoViewIfOutOfView(el, { behavior: 'smooth' })
+          setTimeout(() => (scrollBlocked = false), 0)
+        }
+      }
     }
   }, [active])
 

@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars, no-undef */
+// @ts-nocheck
+
 function getChildren (machine) {
   if (!machine.states) return []
 
@@ -21,7 +24,7 @@ function StateNodeViz ({ stateNode }) {
   React.useEffect(() => {
     if (active) {
       const el = document.getElementById(stateNodePath)
-      el && el.scrollIntoView({ behavior: 'smooth' })
+      el && scrollIntoViewIfOutOfView(el, { behavior: 'smooth' })
     }
   }, [active])
 
@@ -29,13 +32,13 @@ function StateNodeViz ({ stateNode }) {
     React.createElement(
       'div',
       {
-        className: 'state-node',
+        className: 'state-node sn',
         id: stateNodePath,
         'data-active': active || undefined,
         'data-type': stateNode.type
       },
       React.createElement(
-        'h4',
+        'span',
         { className: 'state-key' },
         stateNode.key
       ),
@@ -69,7 +72,7 @@ function ServiceViz ({ service }) {
     service,
     XState.interpret,
     {},
-    ''
+    service.id
   )
 
   const onMessage = React.useMemo(() => {

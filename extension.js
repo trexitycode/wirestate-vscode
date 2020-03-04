@@ -380,7 +380,8 @@ async function getHtmlForWebview (webview, extensionPath, statechartPath, statec
     'vendor/Treeify.js',
     'vendor/stateValueLeafIds.js',
     'vendor/useMachine.js',
-    'vendor/ServiceViz.js'
+    'vendor/ServiceViz.js',
+    'vendor/scrollIntoViewIfOutOfView.js'
   ]
     .map(script => vscode.Uri.file(path.join(extensionPath, script)))
     .map(script => webview.asWebviewUri(script))

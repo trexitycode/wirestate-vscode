@@ -36,13 +36,13 @@ function scrollIntoViewIfOutOfView (el, options) {
     }, options))
   } else if ((leftOfPage + widthOfPage) < (elX + elW)) {
     el.scrollIntoView(Object.assign({
-      block: 'end',
-      inline: 'nearest',
+      block: 'nearest',
+      inline: 'start',
     }, options))
   } else if (elX < leftOfPage) {
     el.scrollIntoView(Object.assign({
-      block: 'start',
-      inline: 'nearest',
+      block: 'nearest',
+      inline: 'start',
     }, options))
   }
 }

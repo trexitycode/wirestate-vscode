@@ -426,7 +426,7 @@ ${output}
           ),
           React.createElement(
             ServiceViz,
-            { service: machines[key], name: key }
+            { service: machines[key] }
           )
         )
       ))

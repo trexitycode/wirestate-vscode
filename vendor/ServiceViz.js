@@ -9,12 +9,13 @@ function getChildren (machine) {
   })
 }
 
-function getActiveLinks (stateNode, current) {
+function getLinks (stateNode, current) {
+  const machineId = stateNode.machine.id
   const stateNodePath = stateNode.path.join('.')
   const active = !stateNodePath || current.matches(stateNodePath)
 
   const childNodes = getChildren(stateNode)
-  const stateNodeId = stateNode.id.replace(/\s/g, '_')
+  const stateNodeId = `${machineId}:${stateNode.id.replace(/\s/g, '_')}`
   const on = stateNode.config && stateNode.config.on || {}
   const events = Object.keys(on)
 
@@ -27,16 +28,17 @@ function getActiveLinks (stateNode, current) {
         targets
           .map(target => target.replace(/^#/, '').replace(/\s/g, '_'))
           .map(target => ({
-            from: `${stateNodeId}:${event.replace(/\s/g, '_')}`,
-            to: target
+            source: `${stateNodeId}:${event.replace(/\s/g, '_')}`,
+            target: `${machineId}:${target}`,
+            active
           }))
       )
     ]
   }, [])
 
-  const childLinks = childNodes.map(childNode => getActiveLinks(childNode, current)).flat()
+  const childLinks = childNodes.map(childNode => getLinks(childNode, current)).flat()
 
-  return [...(active ? localLinks : []), ...childLinks]
+  return [...localLinks, ...childLinks]
 }
 
 const MachineContext = React.createContext(null)
@@ -44,15 +46,17 @@ const MachineContext = React.createContext(null)
 let scrollBlocked = false
 
 function StateNodeViz ({ stateNode }) {
-  const childNodes = React.useMemo(() => {
-    return getChildren(stateNode)
-  }, [])
+  const machineId = stateNode.machine.id
 
   const { current, send } = React.useContext(MachineContext)
   const stateNodePath = stateNode.path.join('.')
-  const stateNodeId = stateNode.id.replace(/\s/g, '_')
+  const stateNodeId = `${machineId}:${stateNode.id.replace(/\s/g, '_')}`
   const active = current.matches(stateNodePath)
   const events = Object.keys(stateNode.config && stateNode.config.on || {})
+
+  const childNodes = React.useMemo(() => {
+    return getChildren(stateNode)
+  }, [])
 
   React.useEffect(() => {
     if (active) {
@@ -117,13 +121,15 @@ function StateNodeViz ({ stateNode }) {
   )
 }
 
-function ServiceViz ({ service, name }) {
+function ServiceViz ({ service }) {
   const machine = useMachine(
     service,
     XState.interpret,
     {},
     service.id
   )
+
+  const machineId = service.id
 
   const onMessage = React.useMemo(() => {
     return (evt) => {
@@ -134,26 +140,28 @@ function ServiceViz ({ service, name }) {
     }
   }, [machine.send])
 
+  const [showInactiveLines, setShowInactiveLines] = React.useState(false)
+
   React.useEffect(() => {
     window.addEventListener('message', onMessage, false)
     return () => window.removeEventListener('message', onMessage)
   }, [onMessage])
 
   const plumb = React.useMemo(() => {
-    const container = document.getElementById(`machine-container-${name}`)
+    const container = document.getElementById(`machine-container-${machineId}`)
 
     return jsPlumb.getInstance({
-      Anchors: [['Right'], ['Top', 'Bottom']],
+      Anchors: [['Right', 'Left'], ['Perimeter', { shape: 'Rectangle', anchorCount: 250 }]],
       Container: container
     })
-  }, [name])
+  }, [machineId])
 
   const connectionsRef = React.useRef([])
 
   React.useEffect(() => {
     if (!plumb) return
 
-    const links = getActiveLinks(machine.service.machine, machine.current)
+    const links = getLinks(machine.service.machine, machine.current)
 
     plumb.batch(() => {
       connectionsRef.current.forEach(conn => {
@@ -162,27 +170,29 @@ function ServiceViz ({ service, name }) {
     })
 
     plumb.batch(() => {
-      connectionsRef.current = links.map(link => {
-        return plumb.connect({
-          source: link.from,
-          target: link.to,
-          paintStyle: {
-            strokeWidth: 3,
-            stroke: 'rgba(200, 50, 0, 0.5)'
-          },
-          connector: ['Flowchart', {
-            cornerRadius: 8,
-            stub: 16,
-            midpoint: 0.5
-          }],
-          endpoints: ['Blank', 'Blank'],
-          overlays: [['Arrow', { location: 1, width: 10, length: 10 }]],
+      connectionsRef.current = links
+        .filter(({ active }) => showInactiveLines || active)
+        .map(({ source, target, active }) => {
+          return plumb.connect({
+            source,
+            target,
+            paintStyle: {
+              strokeWidth: active ? 3 : 2,
+              stroke: active ? 'rgba(200, 50, 0, 0.5)' : 'rgba(0, 0, 0, 0.1)'
+            },
+            connector: ['Flowchart', {
+              cornerRadius: 8,
+              stub: 16,
+              midpoint: 0.5
+            }],
+            endpoints: ['Blank', 'Blank'],
+            overlays: [['Arrow', { location: 1, width: 8, length: 8 }]],
+          })
         })
       })
-    })
 
     plumb.repaintEverything()
-  }, [machine.current.value, plumb, connectionsRef])
+  }, [machine.current.value, plumb, connectionsRef, showInactiveLines])
 
   return (
     React.createElement(
@@ -190,10 +200,18 @@ function ServiceViz ({ service, name }) {
       { value: machine },
       React.createElement(
         'div',
-        { id: `machine-container-${name}`, className: 'machine-container' },
+        { id: `machine-container-${machineId}`, className: 'machine-container' },
         React.createElement(
           StateNodeViz,
           { stateNode: machine.service.machine }
+        ),
+        React.createElement(
+          'button',
+          {
+            className: 'active-lines-toggle',
+            onClick: () => setShowInactiveLines(!showInactiveLines)
+          },
+          showInactiveLines ? 'Hide inactive lines' : 'Show inactive lines'
         )
       )
     )

@@ -377,6 +377,7 @@ async function getHtmlForWebview (webview, extensionPath, statechartPath, statec
     'node_modules/react/umd/react.production.min.js',
     'node_modules/react-dom/umd/react-dom.production.min.js',
     'vendor/xstate.web.js',
+    'vendor/jsplumb.min.js',
     'vendor/Treeify.js',
     'vendor/stateValueLeafIds.js',
     'vendor/useMachine.js',
@@ -425,7 +426,7 @@ ${output}
           ),
           React.createElement(
             ServiceViz,
-            { service: machines[key] }
+            { service: machines[key], name: key }
           )
         )
       ))

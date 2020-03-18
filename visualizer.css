@@ -5,6 +5,16 @@ html, body {
   padding: 0;
 }
 
+.machine-container {
+  position: relative;
+}
+
+.machine-container svg,
+.machine-container svg path,
+.machine-container .jtk-endpoint {
+  pointer-events: none;
+}
+
 .state-node {
   border: 1px solid #c1c1c1;
   padding: 2px;
@@ -33,7 +43,7 @@ html, body {
 }
 
 .event {
-  display: inline-block;
+  display: block;
   background: #5d9ed0;
   color: #ffffff;
   border-radius: 5px;
@@ -41,7 +51,6 @@ html, body {
   cursor: pointer;
   font-size: 10px;
   line-height: 10px;
-  margin-right: 1px;
   margin-bottom: 1px;
 }
 
@@ -51,11 +60,9 @@ html, body {
   color: white;
 }
 
-/*
-.state-node[data-type='atomic'][data-active] .event {
+/* .state-node[data-type='atomic'][data-active] .event {
   color: #dcb975;
-}
-*/
+} */
 
 .state-key {
   display: block;

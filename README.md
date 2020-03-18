@@ -29,6 +29,10 @@ N/A
 
 ## Release Notes
 
+### 2.1.1
+
+- Added directional arrows in the visualization
+
 ### 2.1.0
 
 - Added basic visualizer to preview your WireState statecharts. Choose

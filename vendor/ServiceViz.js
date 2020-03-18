@@ -9,9 +9,9 @@ function getChildren (machine) {
   })
 }
 
-function getLinks (stateNode, current) {
+function getActiveLinks (stateNode, current) {
   const stateNodePath = stateNode.path.join('.')
-  const active = current.matches(stateNodePath)
+  const active = !stateNodePath || current.matches(stateNodePath)
 
   const childNodes = getChildren(stateNode)
   const stateNodeId = stateNode.id.replace(/\s/g, '_')
@@ -34,7 +34,7 @@ function getLinks (stateNode, current) {
     ]
   }, [])
 
-  const childLinks = childNodes.map(childNode => getLinks(childNode, current)).flat()
+  const childLinks = childNodes.map(childNode => getActiveLinks(childNode, current)).flat()
 
   return [...(active ? localLinks : []), ...childLinks]
 }
@@ -153,7 +153,7 @@ function ServiceViz ({ service, name }) {
   React.useEffect(() => {
     if (!plumb) return
 
-    const links = getLinks(machine.service.machine, machine.current)
+    const links = getActiveLinks(machine.service.machine, machine.current)
 
     plumb.batch(() => {
       connectionsRef.current.forEach(conn => {
@@ -182,8 +182,6 @@ function ServiceViz ({ service, name }) {
     })
 
     plumb.repaintEverything()
-
-    console.warn('---links', links)
   }, [machine.current.value, plumb, connectionsRef])
 
   return (

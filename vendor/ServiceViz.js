@@ -89,11 +89,17 @@ function StateNodeViz ({ stateNode }) {
             'li',
             {
               key: event,
-              id: `${stateNodeId}:${event.replace(/\s/g, '_')}`,
-              className: 'node event',
-              onClick: () => send(event)
+              className: 'event-container'
             },
-            event
+            React.createElement(
+              'span',
+              {
+                id: `${stateNodeId}:${event.replace(/\s/g, '_')}`,
+                className: 'node event',
+                onClick: () => send(event)
+              },
+              event
+            )
           )
         ))
       ),
@@ -167,7 +173,7 @@ function ServiceViz ({ service, name }) {
           connector: ['Flowchart', {
             cornerRadius: 8,
             stub: 16,
-            midpoint: 0
+            midpoint: 0.5
           }],
           endpoints: ['Blank', 'Blank'],
           overlays: [['Arrow', { location: 1, width: 10, length: 10 }]],

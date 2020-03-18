@@ -42,8 +42,13 @@ html, body {
   padding: 0;
 }
 
-.event {
+.event-container {
   display: block;
+  margin-bottom: 1px;
+  margin-right: 1px;
+}
+
+.event {
   background: #5d9ed0;
   color: #ffffff;
   border-radius: 5px;
@@ -51,7 +56,6 @@ html, body {
   cursor: pointer;
   font-size: 10px;
   line-height: 10px;
-  margin-bottom: 1px;
 }
 
 .state-node[data-type='atomic'][data-active] {

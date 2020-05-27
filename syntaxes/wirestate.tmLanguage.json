@@ -71,13 +71,16 @@
       }
     },
     "machines": {
-      "match": "(@machine) ([A-Za-z0-9 _-]+)\\n",
+      "match": "(@machine) ([A-Za-z0-9 _-]+)([&]+)?\\n",
       "captures": {
         "1": {
           "name": "entity.name.type.machine.machines.wirestate"
         },
         "2": {
           "name": "variable.parameter.name.machines.wirestate"
+        },
+        "3": {
+          "name": "entity.name.tag.qualifier.machines.wirestate"
         }
       }
     },

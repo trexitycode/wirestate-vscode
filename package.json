@@ -3,7 +3,7 @@
   "displayName": "WireState VSCode",
   "description": "WireState syntax highlighting and commands",
   "version": "2.1.1",
-  "publisher": "launchfort",
+  "publisher": "trexitycode",
   "engines": {
     "vscode": "^1.37.0"
   },
@@ -82,7 +82,7 @@
     "watch": "tsc -watch -p ./"
   },
   "dependencies": {
-    "@launchfort/wirestate": "github:launchfort/wirestate#3.0.2",
+    "@trexitycode/wirestate": "github:trexitycode/wirestate#3.0.3",
     "react": "16.13.0",
     "react-dom": "16.13.0",
     "recast": "^0.18.2",

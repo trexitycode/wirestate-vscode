@@ -11,7 +11,7 @@ Git clone the project into a folder of your choosing. In this example, we are
 cloning it into your home folder under the `wirestate-vscode/` directory.
 
 ```
-$ git clone https://github.com/launchfort/wirestate-vscode.git ~/wirestate-vscode
+$ git clone https://github.com/trexitycode/wirestate-vscode.git ~/wirestate-vscode
 $ cd ~/wirestate-vscode
 $ npm install
 $ ln -s ~/wirestate-vscode ~/.vscode/extensions/wirestate-vscode

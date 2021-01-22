@@ -1,7 +1,7 @@
 const vscode = require('vscode')
 const fs = require('fs')
 const path = require('path')
-const WireState = require('@launchfort/wirestate/lib/index')
+const WireState = require('@trexitycode/wirestate/lib/index')
 
 const MACHINE_ONLY_STATE_NAME = 'index'
 const CALLBACKS_DIRECTORY_NAME = 'callbacks'

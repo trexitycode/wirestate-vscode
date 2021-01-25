@@ -10,8 +10,9 @@ const CALLBACKS_INDEX_FILENAME = 'index.js'
 const CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS = `../${CALLBACKS_DIRECTORY_NAME}`
 const DEFAULT_CALLBACK_CONTENTS_CURSOR_START_POSITION = [4, 4]
 const DEFAULT_CALLBACK_CONTENTS_CURSOR_END_POSITION = [4, 18]
-const DEFAULT_CALLBACK_CONTENTS = [
-  `export default function (evt, send, data) {`,
+const DEFAULT_CALLBACK_CONTENTS = (machineId, callbackId) => [
+  `// eslint-disable-next-line camelcase`,
+  `export default function ${machineId.replace(/ /gu, '_')}__${callbackId.replace(/ /gu, '_')} (evt, send, data) {`,
   `  try {`,
   `    // send('...')`,
   `  } catch (error) {`,
@@ -190,7 +191,7 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
       })
       .then(() => {
         return newEditor.edit(edit => {
-          edit.insert(new vscode.Position(0, 0), DEFAULT_CALLBACK_CONTENTS)
+          edit.insert(new vscode.Position(0, 0), DEFAULT_CALLBACK_CONTENTS(machine, id))
         })
       })
       .then(() => {

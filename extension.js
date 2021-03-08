@@ -7,9 +7,9 @@ const MACHINE_ONLY_STATE_NAME = 'index'
 const CALLBACKS_DIRECTORY_NAME = 'callbacks'
 const CALLBACK_FILENAME_EXTENSION = '.js'
 const CALLBACKS_INDEX_FILENAME = 'index.js'
-const CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS = `../${CALLBACKS_DIRECTORY_NAME}`
 const DEFAULT_CALLBACK_CONTENTS_CURSOR_START_POSITION = [4, 4]
 const DEFAULT_CALLBACK_CONTENTS_CURSOR_END_POSITION = [4, 18]
+
 const DEFAULT_CALLBACK_CONTENTS = (machineId, callbackId) => [
   `// eslint-disable-next-line camelcase`,
   `export default function ${machineId.replace(/ /gu, '_')}__${callbackId.replace(/ /gu, '_')} (evt, send, data) {`,
@@ -22,6 +22,21 @@ const DEFAULT_CALLBACK_CONTENTS = (machineId, callbackId) => [
   `}`,
   ``
 ].join('\n')
+
+const getCallbacksRelativePathFromStatecharts = (statechartsPath) => {
+  const dotdots = []
+  const max = 10
+  let count = 0
+  let testPath = ''
+
+  do {
+    if (count++ > max) throw new Error('Unable to find callbacks path')
+    dotdots.push('..')
+    testPath = path.join(statechartsPath, ...dotdots, CALLBACKS_DIRECTORY_NAME)
+  } while (!fs.existsSync(testPath))
+
+  return path.resolve(testPath)
+}
 
 let disposables = []
 
@@ -151,7 +166,7 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
   console.log(`[wirestate] managing callback for ID [${id}] for machine [${machine}]`)
 
   const statechartsPath = path.dirname(editor.document.fileName)
-  const callbacksPath = path.resolve(statechartsPath, CALLBACKS_RELATIVE_PATH_FROM_STATECHARTS)
+  const callbacksPath = getCallbacksRelativePathFromStatecharts(statechartsPath)
   const callbacksIndexFile = path.join(callbacksPath, CALLBACKS_INDEX_FILENAME)
   const callbackFilename = `${id}${CALLBACK_FILENAME_EXTENSION}`
   const callbackFile = path.join(callbacksPath, machine, callbackFilename)

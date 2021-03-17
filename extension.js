@@ -43,8 +43,22 @@ let disposables = []
 let visualizerInstance
 const visualizerViewType = 'visualizer'
 
+const outputChannel = vscode.window.createOutputChannel('WireState')
+
+const logger = {
+  info: (...args) => {
+    console.log(...args)
+    outputChannel.appendLine(
+      [
+        `[${new Date().toISOString()}]`,
+        ...args.map((arg) => JSON.stringify(arg, null, 2))
+      ].join(' ')
+    )
+  }
+}
+
 function activate (context) {
-  console.log('[wirestate] extension activated')
+  logger.info('extension activated')
 
   // Set the wordPattern to the best approximation we can achieve to consider
   // whole state names/event names etc as single words. This makes extracting
@@ -58,7 +72,7 @@ function activate (context) {
 
 	context.subscriptions.push(
     vscode.commands.registerCommand('wirestate.manageCallback', function () {
-      console.log('[wirestate] extension invoked')
+      logger.info('extension invoked')
 
       const editor = vscode.window.activeTextEditor
 
@@ -74,15 +88,15 @@ function activate (context) {
         const line = editor.document.lineAt(range.start.line).text
 
         if (word.startsWith('@machine ')) {
-          console.log('[wirestate] manage machine from @machine')
+          logger.info('manage machine from @machine')
           const machine = word.replace('@machine ', '').replace(/^"/, '').replace(/"$/, '')
           manageId(editor, machine)
         } else if (word.startsWith('@use ')) {
-          console.log('[wirestate] manage machine from @use')
+          logger.info('manage machine from @use')
           const machine = word.replace('@use ', '').replace(/^"/, '').replace(/"$/, '')
           manageId(editor, machine)
         } else if (line.startsWith('@import {')) {
-          console.log('[wirestate] switch to file from @import')
+          logger.info('switch to file from @import')
           const file = line.replace('@import ', '').replace(/{[^}]+/, '').replace('} from ', '').replace(/^['"]/, '').replace(/['"]$/, '')
           manageFile(editor, file, word)
         } else {
@@ -93,11 +107,11 @@ function activate (context) {
           const arrowPosition = line.indexOf('->')
 
           if (arrowPosition === -1 || arrowPosition < wordPosition) {
-            console.log('[wirestate] manage ID')
+            logger.info('manage ID')
             const machine = findMachine(editor, lineNo, word)
             manageId(editor, machine, word)
           } else {
-            console.log('[wirestate] manage event')
+            logger.info('manage event')
             const machine = findMachine(editor, lineNo, word)
             manageEvent(editor, machine, word)
           }
@@ -111,15 +125,19 @@ function activate (context) {
   // Register the WireState visualizer preview
 	context.subscriptions.push(
     vscode.commands.registerCommand('wirestate.visualize', async () => {
-      console.log('[wirestate] visualizer invoked')
+      try {
+        logger.info('visualizer invoked')
 
-      const editor = vscode.window.activeTextEditor
+        const editor = vscode.window.activeTextEditor
 
-      const statechartPath = editor.document.fileName
-      const statechartText = editor.document.getText()
-      const isUntitled = editor.document.isUntitled
+        const statechartPath = editor.document.fileName
+        const statechartText = editor.document.getText()
+        const isUntitled = editor.document.isUntitled
 
-      await showVisualizer(context.extensionPath, statechartPath, statechartText, isUntitled)
+        await showVisualizer(context.extensionPath, statechartPath, statechartText, isUntitled)
+      } catch (error) {
+        vscode.window.showErrorMessage(error.message)
+      }
     })
   )
 
@@ -133,7 +151,7 @@ function activate (context) {
   )
 
   if (workspaceFolder) {
-    console.log('[wirestate] watching workspace folder:', workspaceFolder)
+    logger.info('watching workspace folder:', workspaceFolder)
 
     const pattern = new vscode.RelativePattern(
       workspaceFolder,
@@ -158,12 +176,12 @@ function activate (context) {
       rebuildDebounceId = setTimeout(() => rebuildIndexFile(uri.fsPath), 1000)
     }))
   } else {
-    console.log('[wirestate] no workspace folder could be determined, cannot watch for deleted callback files')
+    logger.info('no workspace folder could be determined, cannot watch for deleted callback files')
   }
 }
 
 function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
-  console.log(`[wirestate] managing callback for ID [${id}] for machine [${machine}]`)
+  logger.info(`managing callback for ID [${id}] for machine [${machine}]`)
 
   const statechartsPath = path.dirname(editor.document.fileName)
   const callbacksPath = getCallbacksRelativePathFromStatecharts(statechartsPath)
@@ -180,14 +198,14 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
   }
 
   if (fs.existsSync(callbackFile)) {
-    console.log('[wirestate] open existing', callbackFile)
+    logger.info('open existing', callbackFile)
 
     vscode.workspace.openTextDocument(callbackFile)
       .then(doc => {
         return vscode.window.showTextDocument(doc)
       })
   } else {
-    console.log('[wirestate] open untitled', callbackFile)
+    logger.info('open untitled', callbackFile)
 
     let newEditor = null
 
@@ -219,14 +237,14 @@ function manageId (editor, machine, id = MACHINE_ONLY_STATE_NAME) {
 }
 
 function manageFile (editor, file, target) {
-  console.log('[wirestate] managing file', file, 'target', target)
+  logger.info('managing file', file, 'target', target)
 
   const statechartsPath = path.dirname(editor.document.fileName)
   const wsFileRaw = path.resolve(statechartsPath, file)
   const wsFile = fs.existsSync(wsFileRaw) ? wsFileRaw : `${wsFileRaw}.wirestate`
 
   if (fs.existsSync(wsFile)) {
-    console.log('[wirestate] open existing', wsFile)
+    logger.info('open existing', wsFile)
 
     vscode.workspace.openTextDocument(wsFile)
       .then(doc => {
@@ -236,7 +254,7 @@ function manageFile (editor, file, target) {
 }
 
 function manageEvent (editor, machine, event) {
-  console.log('[wirestate] managing event:', event)
+  logger.info('managing event:', event)
   if (!visualizerInstance) {
     throw new Error(`No visualizer instance found to send event: ${event}`)
   }
@@ -323,10 +341,10 @@ function rebuildIndexFile (filename) {
       const updatedIndexFileContents = rebuildIndexFileContents(callbackList)
 
       if (indexFileContents !== updatedIndexFileContents) {
-        console.log('[wirestate] saved rebuilt callbacks index file', callbacksIndexFile)
+        logger.info('saved rebuilt callbacks index file', callbacksIndexFile)
         fs.writeFileSync(callbacksIndexFile, updatedIndexFileContents)
       } else {
-        console.log('[wirestate] no changes to callbacks index file', callbacksIndexFile)
+        logger.info('no changes to callbacks index file', callbacksIndexFile)
       }
     })
 }
@@ -349,6 +367,8 @@ async function generate (statechartPath, statechartText, isUntitled) {
   const cache = new WireState.MemoryCache()
 
   if (isUntitled) {
+    logger.info('compiling wirestate from text', { statechartPath, srcDir: './' })
+
     // @ts-ignore
     return WireState.compileFromText(statechartText, statechartPath, {
       srcDir: './',
@@ -357,9 +377,13 @@ async function generate (statechartPath, statechartText, isUntitled) {
       disableCallbacks: true
     })
   } else {
+    const srcDir = path.dirname(statechartPath)
+
+    logger.info('compiling wirestate', { statechartPath, srcDir })
+
     // @ts-ignore
     return WireState.compile(statechartPath, {
-      srcDir: path.dirname(statechartPath),
+      srcDir,
       generatorName: 'xstate',
       cache,
       disableCallbacks: true
@@ -369,6 +393,8 @@ async function generate (statechartPath, statechartText, isUntitled) {
 
 async function getHtmlForWebview (webview, extensionPath, statechartPath, statechartText, isUntitled) {
   let output = await generate(statechartPath, statechartText, isUntitled)
+
+  logger.info('generated visualizer output', output)
 
   // Until we have support for the following in WireState, strip out the empty actions
   output = output.replace(/,\n\s+"actions": function \(\) \{\}/gm, '')
@@ -462,6 +488,13 @@ async function createVisualizerInstance (panel, extensionPath, statechartPath, s
   const disposables = []
 
   const update = async function () {
+    logger.info('updating visualizer', {
+      extensionPath,
+      statechartPath,
+      statechartText,
+      isUntitled
+    })
+
     panel.title = 'Visualizer'
 		panel.webview.html = await getHtmlForWebview(
       panel.webview,
@@ -543,15 +576,11 @@ async function showVisualizer (extensionPath, statechartPath, statechartText, is
 // Exports / cleanup
 // -----------------------------------------------------------------------------
 
-exports.activate = activate
-
 function deactivate () {
-  console.log('[wirestate] extension deactivated')
+  logger.info('extension deactivated')
   disposables.forEach(disposable => disposable.dispose())
   disposables = []
 }
 
-module.exports = {
-	activate,
-	deactivate
-}
+exports.activate = activate
+exports.deactivate = deactivate

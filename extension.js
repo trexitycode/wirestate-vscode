@@ -349,10 +349,24 @@ function rebuildIndexFile (filename) {
     })
 }
 
+const toSimpleJSID = (str) => {
+  return str
+    .replace(/^\d/, '_$&') // leading digits are not allowed
+    .replace(/ /gu, '_') // spaces are not allowed
+    .replace(/-/gu, '_') // dashes are not allowed
+    .replace(/[^a-zA-Z0-9]/gu, '_') // any non-alphanumeric is not allowed
+}
+
 function rebuildIndexFileContents (callbackList) {
-  return `export const callbacks = {
-${callbackList.flat().map(({ key, requirePath }) => {
-  return `  '${key}': require('${requirePath}').default`
+  const imports = callbackList.flat().map(({ key, requirePath }) => {
+    return `import ${toSimpleJSID(key)} from '${requirePath}.js'`
+  }).join('\n')
+
+  return `${imports}
+
+export const callbacks = {
+${callbackList.flat().map(({ key }) => {
+  return `  '${key}': ${toSimpleJSID(key)}`
 }).join(',\n')}
 }
 `

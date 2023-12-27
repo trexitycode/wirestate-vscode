@@ -338,7 +338,7 @@ function rebuildIndexFile (filename) {
     })
     .then(callbackList => {
       const indexFileContents = fs.readFileSync(callbacksIndexFile).toString()
-      const updatedIndexFileContents = rebuildIndexFileContents(callbackList)
+      const updatedIndexFileContents = rebuildIndexFileContents(callbacksIndexFile, callbackList)
 
       if (indexFileContents !== updatedIndexFileContents) {
         logger.info('saved rebuilt callbacks index file', callbacksIndexFile)
@@ -357,15 +357,31 @@ const toSimpleJSID = (str) => {
     .replace(/[^a-zA-Z0-9]/gu, '_') // any non-alphanumeric is not allowed
 }
 
-function rebuildIndexFileContents (callbackList) {
-  const imports = callbackList.flat().map(({ key, requirePath }) => {
+function rebuildIndexFileContents (callbacksIndexFile, callbackList) {
+  const list = callbackList
+    .flat()
+    .map(({ key, requirePath }) => {
+      const filename = path.resolve(path.dirname(callbacksIndexFile), `${requirePath}.js`)
+      const indexFilename = path.resolve(path.dirname(callbacksIndexFile), requirePath, 'index.js')
+
+      if (fs.existsSync(filename)) {
+        return { key, requirePath }
+      } else if (fs.existsSync(indexFilename)) {
+        return { key, requirePath: `${requirePath}/index` }
+      } else {
+        return null
+      }
+    })
+    .filter(Boolean)
+
+  const imports = list.map(({ key, requirePath }) => {
     return `import ${toSimpleJSID(key)} from '${requirePath}.js'`
   }).join('\n')
 
   return `${imports}
 
 export const callbacks = {
-${callbackList.flat().map(({ key }) => {
+${list.map(({ key }) => {
   return `  '${key}': ${toSimpleJSID(key)}`
 }).join(',\n')}
 }
